@@ -1,0 +1,735 @@
+---
+title: "Easy Cleaning with the `janitor` Package"
+author: "Dorota Rizik"
+date: August 2024
+date-format: "MMMM YYYY"
+format: 
+  revealjs: 
+    theme: sky
+    incremental: false
+    slide-number: true
+execute: 
+  echo: true
+editor: visual
+---
+
+# About me
+
+## My background
+
+::: incremental
+-   I have experience with data cleaning, analysis, and visualization in the higher education space.
+
+-   I have a MS in Applied Statistics, proficiency in R, SAS, and SQL.
+
+-   I have worked in academia, non-profits, and the private sector. I currently work at a consulting firm primarily focusing on developing helpful tools for service members going to college.
+:::
+
+## My dogs
+
+::: columns
+::: {.column width="50%"}
+![Beckett](img/Beckett.jpg)
+:::
+
+::: {.column width="50%"}
+![Charlotte](img/Charlotte.jpg)
+:::
+:::
+
+# About this talk
+
+## This talk will be
+
+::: incremental
+-   a high-level overview of some helpful functions
+
+-   a discussion of common data cleaning issues
+
+-   a demonstration with real data
+:::
+
+## This talk will not be
+
+::: incremental
+-   an in-depth tutorial on R programming or the tidyverse
+
+-   a comprehensive review of every `janitor` function
+:::
+
+## This talk will use data from {.smaller}
+
+-   Integrated Postsecondary Education Data System (IPEDS)
+
+-   College Scorecard
+
+College Scorecard uses IPEDS data to create institutional profiles, which include information on net price, graduation rates, and student body diversity.
+
+But, College Scorecard also has data from other sources, which include data on student loan repayment and earnings.
+
+<br/>
+
+::: columns
+::: {.column width="50%"}
+IPEDS
+
+-   <https://nces.ed.gov/ipeds/use-the-data>
+
+-   Compare Institutions \> By Groups \> "EZ Groups" \> "All institutions" \> Select Variables
+:::
+
+::: {.column width="50%"}
+College Scorecard
+
+-   <https://collegescorecard.ed.gov/data>
+
+-   Select "Most Recent Institution-Level Data"
+:::
+:::
+
+# Without further ado...
+
+## Agenda
+
+1.  About the package
+
+2.  Common data cleaning issues with demos
+
+    -   Column names and types
+
+    -   Date formats
+
+    -   Empty rows and columns
+
+    -   Missing values
+
+    -   Duplicates
+
+    -   Frequency tables
+
+    -   Formatting tables
+
+# About the `janitor` package
+
+## Key features
+
+::: incremental
+-   cleans column names so they have consistent format
+-   makes it easy to explore duplicate records
+-   provides quick frequency tables
+-   formats tabulation results
+-   works well with the "tidyverse" and the pipe function %\>%
+:::
+
+::: {.fragment .fade-left}
+See package [documentation](https://cran.r-project.org/web/packages/janitor/janitor.pdf) and [vignette](https://cran.r-project.org/web/packages/janitor/vignettes/janitor.html) for more information.
+:::
+
+# Common data cleaning issues
+
+## Column name issues
+
+::: incremental
+-   Different capitalization across data sources
+
+-   Inconsistent delimiters between words
+
+-   The use of '%' or '\#' instead of explicit words
+:::
+
+## The solution: `clean_names()`
+
+```{r}
+#| echo: false
+library(dplyr)
+library(janitor)
+```
+
+::: {.fragment fragment-index="1"}
+```{r}
+# create fake data frame
+df1 <- as.data.frame(matrix(ncol = 9))
+names(df1) <- c("firstID", 
+                "secondid",
+                "thirdId",
+                "ábc@!*", 
+                "% successful (2009)",
+                "REPEAT VALUE", 
+                "REPEAT VALUE", 
+                "", 
+                "")
+```
+::: 
+
+<br/>
+
+::: {.fragment fragment-index="2"}
+```{r}
+# clean names of fake data frame
+df2 <- df1 %>% clean_names()
+```
+::: 
+
+## The solution: `clean_names()`
+
+::: columns
+::: {.column width="50%"}
+```{r}
+glimpse(df1)
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+glimpse(df2)
+```
+:::
+:::
+
+## More about `clean_names()` {.scrollable .smaller}
+
+```{r}
+#| echo: false
+df1 <- as.data.frame(matrix(ncol = 2))
+names(df1) <- c("firstName", "REPEAT VALUE")
+
+tibble::tribble(
+~case,   ~example,
+"original names", names(df1),
+"snake",names(clean_names(df1, case = "snake")),
+"lower_camel",names(clean_names(df1, case = "lower_camel")),
+"upper_camel",names(clean_names(df1, case = "upper_camel")),
+"screaming_snake",names(clean_names(df1, case = "screaming_snake")),
+"lower_upper",names(clean_names(df1, case = "lower_upper")),
+"upper_lower",names(clean_names(df1, case = "upper_lower")),
+"all_caps",names(clean_names(df1, case = "all_caps")),
+"small_camel",names(clean_names(df1, case = "small_camel")),
+"big_camel",names(clean_names(df1, case = "big_camel")),
+"old_janitor",names(clean_names(df1, case = "old_janitor")),
+"parsed",names(clean_names(df1, case = "parsed")),
+"mixed",names(clean_names(df1, case = "mixed")),
+"none",names(clean_names(df1, case = "none")) 
+) %>% 
+  kableExtra::kable() %>% 
+  kableExtra::kable_styling(font_size = 22)
+```
+
+## More about `clean_names()` {.smaller}
+
+The `make_clean_names` function can be used more generally (e.g., on a vector).
+
+The `clean_names` function uses `snakecase::to_any_case` under the hood:
+
+::: {.fragment fragment-index="1"}
+-   abbreviations = leave certain abbreviations untouched [^1]
+:::
+
+[^1]: This argument only works with the cases title, mixed, lower and upper camel; the abbreviations already need to be delimited in the original column names.
+
+::: {.fragment fragment-index="2"}
+```{r}
+#| echo: false
+df1 <- as.data.frame(matrix(ncol = 3))
+names(df1) <- c("firstID", 
+                "secondid",
+                "thirdId")
+```
+
+```{r}
+df1 %>% names()
+
+df1 %>% clean_names("upper_camel", abbreviations = "ID") %>% names()
+```
+:::
+
+::: {.fragment fragment-index="3"}
+-   sep_out = specify a different delimiter besides "\_"
+:::
+
+::: {.fragment fragment-index="4"}
+-   empty_fill = each entry that matches "" will be replaced by the supplied string [^2]
+:::
+
+[^2]: The same string will repeat for multiple empty values, so you should specify as many strings as there are empty values. This argument seems to only works on vectors, not data frames.
+
+::: aside
+Notes:
+:::
+
+## Demo
+
+```{r}
+cs <- readr::read_csv("data/Most-Recent-Cohorts-Institution.csv")
+```
+
+<br/>
+
+```{r}
+cs %>% select(1:20) %>% names()
+```
+
+<br/>
+
+```{r}
+cs %>% select(1:20) %>% clean_names() %>% names()
+```
+
+## Column type issues
+
+Different column types can be problematic if you intend to append or join data files. 
+
+<br/>
+
+Functions like `dplyr::bind_rows()` or `rbind()` will fail, because of different columns or because the column classes don’t match across data.frames.
+
+## The solution: `compare_df_cols()` 
+
+::: {.fragment fragment-index="1"}
+The `compare_df_cols()` returns a summary of how data frames compare. 
+:::
+
+<br/>
+
+::: {.fragment fragment-index="2"}
+```{r}
+df1 <- data.frame(a = 1:2, 
+                  b = c("big", "small"))
+
+df2 <- data.frame(a = 10:12, 
+                  b = c("medium", "small", "big"), 
+                  c = 0, stringsAsFactors = TRUE)
+
+compare_df_cols(df1, df2)
+```
+:::
+## Demo
+
+```{r}
+my_cs <- cs %>%
+  clean_names() %>% 
+  select(unitid, starts_with("md_earn_wne") & ends_with("yr"))
+
+my_ipeds <- readr::read_csv("data/Data_8-28-2024.csv", 
+                            show_col_types = FALSE) %>% 
+  clean_names() %>% 
+  rename_with(.fn = ~stringr::str_extract(.,"bachelors|certificate"),
+              .cols = contains("gr200_22"))
+
+compare_df_cols(my_cs, my_ipeds)
+```
+
+
+## Date issues {.smaller}
+
+::: {.incremental}
+-   Dates can import as numbers, which can vary
+
+    - Excel origin date: January 1, 1900 
+    - SAS origin date: January 1, 1960
+    
+-   A single date column can have a mix of formats
+
+    - Months and days switched (MM-DD vs DD-MM)
+    - Months written out
+    - Years different lengths (YY vs YYYY)
+    - Different delimiters (MM/DD/YY vs MM-DD-YY)
+    
+-   Date columns can contain a mix of strings and numbers
+:::
+
+## The solution: `...numeric_to_date`
+
+::: {.fragment fragment-index="1" style="font-size:0.7em"}
+Manual conversions between SAS and Excel:
+:::
+
+::: {.fragment fragment-index="2" style="font-size:0.5em"}
+-   SAS_date = Excel_date - 21916
+
+-   SAS_time = Excel_time \* 86400
+
+-   SAS_date_time = (Excel_date_time - 21916) \* 86400
+:::
+
+::: {.fragment fragment-index="3"}
+```{r}
+excel_numeric_to_date(41103)
+
+excel_numeric_to_date(41103.01, include_time = TRUE)
+```
+:::
+
+::: {.fragment fragment-index="4"}
+```{r}
+sas_numeric_to_date(date_num = 41103 - 21916)
+
+sas_numeric_to_date(datetime_num = (41103.01 - 21916) * 86400)
+
+sas_numeric_to_date(datetime_num = ((41103.01 - 21916) * 86400) - 20*60*60)
+```
+:::
+
+## The solution: `convert_to_date`
+
+::: {.fragment fragment-index="1"}
+```{r}
+dates <- c("2020-02-29", "40000.1", "40000")
+
+convert_to_date(dates)
+```
+:::
+
+<br/>
+
+::: {.fragment fragment-index="2"}
+```{r}
+convert_to_datetime(dates, 
+                    tz = "UTC",
+                    character_fun=lubridate::ymd_h, 
+                    truncated=1)
+```
+:::
+
+## Demo
+
+No date columns in my CS or IPEDS data.
+
+## Empty fields
+
+::: {.fragment fragment-index="1"}
+Your data might have columns or rows that are totally empty, or columns that contain a single value for all cases. 
+:::
+
+<br/>
+
+::: {.fragment fragment-index="2"}
+```{r}
+df1 <- data.frame(A=1, 
+                  B=c(1, NA, 3),
+                  C=c(NA, NA, NA),
+                  D=c(NA, NA, 3))
+```
+:::
+
+## The solution: `remove_...`
+
+::: {.fragment fragment-index="1"}
+```{r}
+remove_constant(df1)
+```
+:::
+
+::: {.fragment fragment-index="2"}
+```{r}
+remove_empty(df1, which = "cols")
+```
+:::
+
+::: {.fragment fragment-index="3"}
+```{r}
+remove_empty(df1, which = "rows")
+```
+:::
+
+::: {.fragment fragment-index="4"}
+```{r}
+remove_constant(df1) %>% remove_empty(which = "rows")
+```
+:::
+
+## Demo
+::: {.fragment fragment-index="1"}
+```{r}
+my_ipeds %>% head()
+```
+:::
+
+::: {.fragment fragment-index="2"}
+```{r}
+remove_empty(my_ipeds, which = "cols") %>% head()
+```
+:::
+
+```{r}
+#| include: false
+my_ipeds <- remove_empty(my_ipeds, which = "cols") 
+```
+
+
+## Missing Values
+
+::: {.fragment fragment-index="1"}
+Missing values can be imported correctly as `NA` or it can be imported as: 
+:::
+
+::: {.fragment fragment-index="2"}
+-  "NA"
+-  "N/A"
+-  "n\\a"
+-  "." 
+-  -999
+-  etc. 
+:::
+
+## The solution: dplyr::na_if()
+
+::: {.fragment fragment-index="1"}
+```{r}
+#| eval: false
+starwars %>%
+  mutate(eye_color = na_if(eye_color, "unknown"))
+```
+:::
+
+<br/>
+
+::: {.fragment fragment-index="2"}
+
+::: {.columns}
+::: {.column width="50%"}
+```{r}
+#| echo: false
+starwars %>%
+  filter(eye_color %in% c("brown", "blue", "black", "unknown")) %>%
+  count(eye_color)
+```
+:::
+
+::: {.column width="50%"}
+```{r}
+#| echo: false
+starwars %>%
+  filter(eye_color %in% c("brown", "blue", "black", "unknown")) %>% 
+  mutate(eye_color = na_if(eye_color, "unknown")) %>% 
+  count(eye_color)
+```
+:::
+:::
+
+:::
+
+<br/>
+
+::: {.fragment fragment-index="3"}
+
+```{r}
+#| eval: false
+starwars %>%
+  mutate(across(where(is.character), ~na_if(., "unknown")))
+
+starwars %>%
+  mutate(across(contains("color"), ~na_if(., "unknown")))
+```
+
+:::
+
+## Demo
+
+No funky `NA` values in my CS or IPEDS data.
+
+## Duplicates
+
+Types of duplicates: 
+
+::: incremental
+-  complete = two or more rows are completely identical
+-  partial = two or more rows are mostly identical, but have different values in some columns
+-  blank = two or more rows are mostly identical, but one row has missing values in some columns
+:::
+
+## The solution: `get_dupes()`
+
+::: {.fragment fragment-index="1"}
+```{r}
+mtcars %>% get_dupes(-c(wt, qsec))
+```
+:::
+<br/>
+
+::: {.fragment fragment-index="2"}
+```{r}
+mtcars %>% 
+  group_by(mpg,cyl,disp,hp,drat,vs,am,gear,carb) %>% 
+  mutate(dupe_count = n()) %>% 
+  filter(dupe_count > 1)
+```
+:::
+
+
+## Demo
+
+```{r}
+get_dupes(my_ipeds, unit_id)
+```
+
+<br/>
+
+```{r}
+get_dupes(my_ipeds, institution_name)
+```
+
+## Frequency Tables
+
+::: {.fragment fragment-index="1"}
+The `tabyl()` function is a tidyverse-oriented replacement for `table()`. 
+:::
+
+::: {.fragment fragment-index="2"}
+It counts combinations of one, two, or three variables. 
+:::
+
+::: {.fragment fragment-index="3"}
+::: {.columns}
+::: {.column width="50%"}
+base R:
+```{r}
+table(mtcars$gear, mtcars$cyl)
+```
+:::
+
+::: {.column width="50%"}
+janitor:
+```{r}
+mtcars %>% tabyl(gear, cyl)
+```
+:::
+:::
+:::
+
+::: {.fragment fragment-index="4" .fade-left}
+See package this [vignette](https://cran.r-project.org/web/packages/janitor/vignettes/tabyls.html) for more information on the `tabyl` function.
+:::
+
+
+## Demo {.scrollable}
+
+No categorical variables in CS or IPEDS data.
+
+::: {.fragment fragment-index="1"}
+```{r}
+starwars %>% tabyl(eye_color) %>% arrange(desc(percent))
+```
+:::
+
+## Formatting Tables
+
+Make your tables more informative with the `adorn_` functions.
+
+::: incremental
+-  You can automatically calculate totals or percentages, both row-wise and column-wise.
+-  You can format your percentages with rounding, displaying a specific number of digits, including the percent sign (%)
+-  You can add the underlying counts back into the table after calculating percentages. 
+-  You can include the names for both variables you are tabulating. 
+:::
+
+## Demo
+
+```{r}
+starwars %>% 
+  filter(species == "Human" & skin_color != "none") %>% 
+  tabyl(eye_color, skin_color)
+```
+
+## Demo
+
+```{r}
+starwars %>% 
+  filter(species == "Human" & skin_color != "none") %>% 
+  tabyl(eye_color, skin_color) %>%
+  
+  adorn_totals("both")
+```
+
+## Demo
+
+```{r}
+starwars %>% 
+  filter(species == "Human" & skin_color != "none") %>% 
+  tabyl(eye_color, skin_color) %>%
+  
+  adorn_totals("both") %>% 
+  adorn_percentages("row")
+```
+
+## Demo
+
+```{r}
+starwars %>% 
+  filter(species == "Human" & skin_color != "none") %>% 
+  tabyl(eye_color, skin_color) %>%
+  
+  adorn_totals("both") %>% 
+  adorn_percentages("row") %>% 
+  adorn_pct_formatting(digits = 0, affix_sign = T)
+```
+
+## Demo
+
+```{r}
+starwars %>% 
+  filter(species == "Human" & skin_color != "none") %>% 
+  tabyl(eye_color, skin_color) %>%
+  
+  adorn_totals("both") %>% 
+  adorn_percentages("row") %>% 
+  adorn_pct_formatting(digits = 0, affix_sign = T) %>%
+  adorn_ns()
+```
+
+## Demo
+
+```{r}
+starwars %>% 
+  filter(species == "Human" & skin_color != "none") %>% 
+  tabyl(eye_color, skin_color) %>%
+  
+  adorn_totals("both") %>% 
+  adorn_percentages("row") %>% 
+  adorn_pct_formatting(digits = 0, affix_sign = T) %>%
+  adorn_ns() %>%
+  adorn_title()
+```
+
+
+## Last Demo
+
+```{r}
+my_df <- my_cs %>% 
+  rename(unit_id = unitid) %>% 
+  full_join(my_ipeds, by = "unit_id") %>% 
+  tidyr::pivot_longer(cols = c(bachelors, certificate),
+                      names_to = "Degree Type", 
+                      values_to = "Graduation Rate")
+```
+
+## Last Demo
+
+```{r}
+my_df %>% 
+  group_by(`Degree Type`) %>% 
+  summarise(Count = n(),
+            `Avg Grad Rate` = mean(`Graduation Rate`, na.rm = T)/100,
+            `Avg Median Earnings`= mean(md_earn_wne_5yr, na.rm = T)) %>% 
+  
+  adorn_pct_formatting(digits = 0, 
+                       rounding = "half to even", 
+                       affix_sign = TRUE, 
+                       contains("Grad Rate"))
+```
+
+## Last Demo
+
+```{r}
+#| echo: false
+library(ggplot2)
+my_df %>% 
+  ggplot(aes(x = `Graduation Rate`, 
+             y = md_earn_wne_5yr, 
+             color = `Degree Type`)) +
+  geom_point() +
+  theme_minimal()
+```
+
+## The End
+
+Thank you! Any questions?
