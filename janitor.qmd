@@ -159,7 +159,7 @@ names(df1) <- c("firstID",
                 "", 
                 "")
 ```
-::: 
+:::
 
 <br/>
 
@@ -168,7 +168,7 @@ names(df1) <- c("firstID",
 # clean names of fake data frame
 df2 <- df1 %>% clean_names()
 ```
-::: 
+:::
 
 ## The solution: `clean_names()`
 
@@ -276,16 +276,16 @@ cs %>% select(1:20) %>% clean_names() %>% names()
 
 ## Column type issues
 
-Different column types can be problematic if you intend to append or join data files. 
+Different column types can be problematic if you intend to append or join data files.
 
 <br/>
 
 Functions like `dplyr::bind_rows()` or `rbind()` will fail, because of different columns or because the column classes don’t match across data.frames.
 
-## The solution: `compare_df_cols()` 
+## The solution: `compare_df_cols()`
 
 ::: {.fragment fragment-index="1"}
-The `compare_df_cols()` returns a summary of how data frames compare. 
+The `compare_df_cols()` returns a summary of how data frames compare.
 :::
 
 <br/>
@@ -302,6 +302,7 @@ df2 <- data.frame(a = 10:12,
 compare_df_cols(df1, df2)
 ```
 :::
+
 ## Demo
 
 ```{r}
@@ -318,22 +319,21 @@ my_ipeds <- readr::read_csv("data/Data_8-28-2024.csv",
 compare_df_cols(my_cs, my_ipeds)
 ```
 
-
 ## Date issues {.smaller}
 
-::: {.incremental}
+::: incremental
 -   Dates can import as numbers, which can vary
 
-    - Excel origin date: January 1, 1900 
-    - SAS origin date: January 1, 1960
-    
+    -   Excel origin date: January 1, 1900
+    -   SAS origin date: January 1, 1960
+
 -   A single date column can have a mix of formats
 
-    - Months and days switched (MM-DD vs DD-MM)
-    - Months written out
-    - Years different lengths (YY vs YYYY)
-    - Different delimiters (MM/DD/YY vs MM-DD-YY)
-    
+    -   Months and days switched (MM-DD vs DD-MM)
+    -   Months written out
+    -   Years different lengths (YY vs YYYY)
+    -   Different delimiters (MM/DD/YY vs MM-DD-YY)
+
 -   Date columns can contain a mix of strings and numbers
 :::
 
@@ -397,7 +397,7 @@ No date columns in my CS or IPEDS data.
 ## Empty fields
 
 ::: {.fragment fragment-index="1"}
-Your data might have columns or rows that are totally empty, or columns that contain a single value for all cases. 
+Your data might have columns or rows that are totally empty, or columns that contain a single value for all cases.
 :::
 
 <br/>
@@ -438,6 +438,7 @@ remove_constant(df1) %>% remove_empty(which = "rows")
 :::
 
 ## Demo
+
 ::: {.fragment fragment-index="1"}
 ```{r}
 my_ipeds %>% head()
@@ -455,20 +456,19 @@ remove_empty(my_ipeds, which = "cols") %>% head()
 my_ipeds <- remove_empty(my_ipeds, which = "cols") 
 ```
 
-
 ## Missing Values
 
 ::: {.fragment fragment-index="1"}
-Missing values can be imported correctly as `NA` or it can be imported as: 
+Missing values can be imported correctly as `NA` or it can be imported as:
 :::
 
 ::: {.fragment fragment-index="2"}
--  "NA"
--  "N/A"
--  "n\\a"
--  "." 
--  -999
--  etc. 
+-   "NA"
+-   "N/A"
+-   "n\\a"
+-   "."
+-   -999
+-   etc.
 :::
 
 ## The solution: dplyr::na_if()
@@ -484,8 +484,7 @@ starwars %>%
 <br/>
 
 ::: {.fragment fragment-index="2"}
-
-::: {.columns}
+::: columns
 ::: {.column width="50%"}
 ```{r}
 #| echo: false
@@ -505,13 +504,11 @@ starwars %>%
 ```
 :::
 :::
-
 :::
 
 <br/>
 
 ::: {.fragment fragment-index="3"}
-
 ```{r}
 #| eval: false
 starwars %>%
@@ -520,7 +517,6 @@ starwars %>%
 starwars %>%
   mutate(across(contains("color"), ~na_if(., "unknown")))
 ```
-
 :::
 
 ## Demo
@@ -529,12 +525,12 @@ No funky `NA` values in my CS or IPEDS data.
 
 ## Duplicates
 
-Types of duplicates: 
+Types of duplicates:
 
 ::: incremental
--  complete = two or more rows are completely identical
--  partial = two or more rows are mostly identical, but have different values in some columns
--  blank = two or more rows are mostly identical, but one row has missing values in some columns
+-   complete = two or more rows are completely identical
+-   partial = two or more rows are mostly identical, but have different values in some columns
+-   blank = two or more rows are mostly identical, but one row has missing values in some columns
 :::
 
 ## The solution: `get_dupes()`
@@ -544,6 +540,7 @@ Types of duplicates:
 mtcars %>% get_dupes(-c(wt, qsec))
 ```
 :::
+
 <br/>
 
 ::: {.fragment fragment-index="2"}
@@ -554,7 +551,6 @@ mtcars %>%
   filter(dupe_count > 1)
 ```
 :::
-
 
 ## Demo
 
@@ -571,17 +567,18 @@ get_dupes(my_ipeds, institution_name)
 ## Frequency Tables
 
 ::: {.fragment fragment-index="1"}
-The `tabyl()` function is a tidyverse-oriented replacement for `table()`. 
+The `tabyl()` function is a tidyverse-oriented replacement for `table()`.
 :::
 
 ::: {.fragment fragment-index="2"}
-It counts combinations of one, two, or three variables. 
+It counts combinations of one, two, or three variables.
 :::
 
 ::: {.fragment fragment-index="3"}
-::: {.columns}
+::: columns
 ::: {.column width="50%"}
 base R:
+
 ```{r}
 table(mtcars$gear, mtcars$cyl)
 ```
@@ -589,6 +586,7 @@ table(mtcars$gear, mtcars$cyl)
 
 ::: {.column width="50%"}
 janitor:
+
 ```{r}
 mtcars %>% tabyl(gear, cyl)
 ```
@@ -596,10 +594,9 @@ mtcars %>% tabyl(gear, cyl)
 :::
 :::
 
-::: {.fragment fragment-index="4" .fade-left}
+::: {.fragment .fade-left fragment-index="4"}
 See package this [vignette](https://cran.r-project.org/web/packages/janitor/vignettes/tabyls.html) for more information on the `tabyl` function.
 :::
-
 
 ## Demo {.scrollable}
 
@@ -613,13 +610,13 @@ starwars %>% tabyl(eye_color) %>% arrange(desc(percent))
 
 ## Formatting Tables
 
-Make your tables more informative with the `adorn_` functions.
+Improve your tables with the `adorn_` functions.
 
 ::: incremental
--  You can automatically calculate totals or percentages, both row-wise and column-wise.
--  You can format your percentages with rounding, displaying a specific number of digits, including the percent sign (%)
--  You can add the underlying counts back into the table after calculating percentages. 
--  You can include the names for both variables you are tabulating. 
+-   You can automatically calculate totals or percentages, both row-wise and column-wise.
+-   You can format your percentages with rounding, displaying a specific number of digits, including the percent sign (%)
+-   You can add the underlying counts back into the table after calculating percentages.
+-   You can include the names for both variables you are tabulating.
 :::
 
 ## Demo
@@ -690,7 +687,6 @@ starwars %>%
   adorn_title()
 ```
 
-
 ## Last Demo
 
 ```{r}
@@ -733,4 +729,3 @@ my_df %>%
 ## The End
 
 Thank you! Any questions?
-
